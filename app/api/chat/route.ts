@@ -1,36 +1,28 @@
-import { openai } from '@ai-sdk/openai';
-import { streamText, convertToModelMessages } from 'ai';
+import { NextRequest } from "next/server";
+import { createOpenAI } from "@ai-sdk/openai";
+import { streamText } from "ai";
 
-export const maxDuration = 30; // Streaming duration in seconds
+// Initialize OpenAI client
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
-export async function POST(req: Request) {
+export const runtime = "edge"; 
+// Use Edge runtime for streaming responses
+export async function POST(req: NextRequest) {
   try {
-    // Parse incoming messages from frontend
-    const { messages } = (await req.json()) as {
-      messages: { role: 'user' | 'assistant'; content: string }[];
-    };
+    const { messages } = await req.json();
 
-    // Streamed response using Vercel AI SDK
-    const response = streamText({
-      model: openai('gpt-3.5-turbo'), // Or 'gpt-4o' if available
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant that provides clear answers.' },
-        ...convertToModelMessages(messages),
-      ],
-      maxTokens: 500,
-      temperature: 0.7,
+  // Call OpenAI with streaming  
+    const result = await streamText({
+      model: openai("gpt-4o-mini"), 
+      messages,
     });
 
-    // Return a streaming response compatible with frontend
-    return response.toUIMessageStreamResponse();
-  } catch (err: unknown) {
-    // Safe error handling without using 'any'
-    const errorMessage = err instanceof Error ? err.message : 'Failed to process request';
-    console.error('Vercel AI SDK error:', errorMessage);
-
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+   // Return the streaming response 
+    return result.toTextStreamResponse();
+  } catch (err: any) {
+    console.error("API error:", err);
+    return new Response("Error: " + err.message, { status: 500 });
   }
 }
