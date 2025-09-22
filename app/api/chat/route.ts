@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 export const maxDuration = 30;
 
-// Initialize Google Generative AI with your API key
+// Initialize Google API key
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
@@ -16,7 +16,7 @@ const searchTool = tool({
     query: z.string().describe('The search query'),
   }),
   execute: async ({ query }) => {
-    // Simulate internet search - replace with actual API call
+    // Simulate internet search 
     const mockResults = [
       `Search results for "${query}":`,
       `• Recent information about ${query}`,
